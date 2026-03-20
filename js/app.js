@@ -220,7 +220,7 @@ function initContactForm() {
       status.textContent = "Algo salió mal. Llámame al (678) 516-4544.";
       status.style.color = "#e53e3e";
     } finally {
-      btn.textContent = "Enviar Mensaje";
+      btn.textContent = "Contáctame";
       btn.disabled = false;
     }
   });
