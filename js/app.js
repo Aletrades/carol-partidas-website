@@ -1,318 +1,188 @@
 /* ============================================
    Carol Partidas — Real Estate Website
    GSAP + Lenis + ScrollTrigger
+   Normal-flow layout with reveal animations
    ============================================ */
 
 // ---- Lenis Smooth Scroll ----
 const lenis = new Lenis({
-  duration: 1.0,
+  duration: 1.1,
   easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
   smoothWheel: true,
 });
-
 lenis.on("scroll", ScrollTrigger.update);
 gsap.ticker.add((time) => lenis.raf(time * 1000));
 gsap.ticker.lagSmoothing(0);
 
 // ---- Loader ----
-async function initLoader() {
+function initLoader() {
   const loader = document.getElementById("loader");
   const bar = document.getElementById("loader-bar");
-  const pct = document.getElementById("loader-percent");
   const images = [...document.querySelectorAll("img")];
+
+  let loaded = 0;
+  const total = Math.max(images.length, 1);
+
+  function update() {
+    loaded++;
+    bar.style.width = Math.round((loaded / total) * 100) + "%";
+  }
 
   if (images.length === 0) {
     bar.style.width = "100%";
-    pct.textContent = "100%";
   } else {
-    let loaded = 0;
-    await Promise.all(
-      images.map((img) =>
-        img
-          .decode()
-          .then(() => {
-            loaded++;
-            const p = Math.round((loaded / images.length) * 100);
-            bar.style.width = p + "%";
-            pct.textContent = p + "%";
-          })
-          .catch(() => {
-            loaded++;
-          })
-      )
+    images.forEach((img) =>
+      img.decode().then(update).catch(update)
     );
   }
 
-  await new Promise((r) => setTimeout(r, 300));
-  gsap.to(loader, {
-    opacity: 0,
-    duration: 0.4,
-    onComplete: () => loader.remove(),
-  });
+  // Min display time then fade out
+  setTimeout(() => {
+    bar.style.width = "100%";
+    setTimeout(() => {
+      gsap.to(loader, {
+        opacity: 0, duration: 0.5,
+        onComplete: () => loader.remove(),
+      });
+    }, 300);
+  }, 800);
 }
 
-// ---- Hero Parallax + CTA ----
-function initHeroParallax() {
-  const heroBg = document.querySelector(".hero-bg");
-  const heroWords = document.querySelectorAll(".hero-heading .word");
-  const heroTagline = document.querySelector(".hero-tagline");
-  const heroLabel = document.querySelector(".hero-content .section-label");
-  const heroCta = document.querySelector(".hero-cta");
-
-  if (heroBg) {
-    gsap.to(heroBg, {
-      yPercent: 30,
-      ease: "none",
-      scrollTrigger: {
-        trigger: ".hero-standalone",
-        start: "top top",
-        end: "bottom top",
-        scrub: true,
-      },
-    });
-  }
-
-  if (heroLabel) {
-    gsap.from(heroLabel, {
-      y: 15,
-      opacity: 0,
-      duration: 0.5,
-      ease: "power3.out",
-      delay: 0.15,
-    });
-  }
-
-  if (heroWords.length) {
-    gsap.from(heroWords, {
-      y: 50,
-      opacity: 0,
-      stagger: 0.07,
-      duration: 0.6,
-      ease: "power3.out",
-      delay: 0.3,
-    });
-  }
-
-  if (heroTagline) {
-    gsap.from(heroTagline, {
-      y: 20,
-      opacity: 0,
-      duration: 0.5,
-      ease: "power3.out",
-      delay: 0.7,
-    });
-  }
-
-  if (heroCta) {
-    gsap.from(heroCta, {
-      y: 20,
-      opacity: 0,
-      duration: 0.5,
-      ease: "power3.out",
-      delay: 0.9,
-    });
-  }
-}
-
-// ---- Header background on scroll ----
-function initHeaderScroll() {
-  const header = document.querySelector(".site-header");
+// ---- Header scroll effect ----
+function initHeader() {
+  const header = document.querySelector(".header");
   ScrollTrigger.create({
-    start: "top -80",
-    onUpdate: (self) => {
-      if (self.direction === 1 && window.scrollY > 80) {
-        header.style.background = "rgba(255, 255, 255, 0.95)";
-        header.style.backdropFilter = "blur(12px)";
-        header.style.boxShadow = "0 1px 0 rgba(0, 0, 0, 0.08)";
-      } else if (window.scrollY <= 80) {
-        header.style.background = "transparent";
-        header.style.backdropFilter = "none";
-        header.style.boxShadow = "none";
-      }
+    start: "top -60",
+    onUpdate: () => {
+      header.classList.toggle("scrolled", window.scrollY > 60);
     },
   });
 }
 
-// ---- Section Animation System ----
-function setupSections() {
-  const scrollContainer = document.getElementById("scroll-container");
-  if (!scrollContainer) return;
+// ---- Hero animations ----
+function initHero() {
+  const tl = gsap.timeline({ delay: 0.8 });
 
-  const totalHeight = scrollContainer.offsetHeight;
-
-  document.querySelectorAll(".scroll-section").forEach((section) => {
-    const enter = parseFloat(section.dataset.enter) / 100;
-    const leave = parseFloat(section.dataset.leave) / 100;
-    const midpoint = (enter + leave) / 2;
-
-    section.style.top = midpoint * totalHeight + "px";
-
-    setupSectionAnimation(section, scrollContainer, enter, leave);
-  });
+  tl.from(".hero-badge", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" })
+    .from(".hero-title", { y: 30, opacity: 0, duration: 0.6, ease: "power3.out" }, "-=0.3")
+    .from(".hero-subtitle", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, "-=0.3")
+    .from(".hero-actions", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, "-=0.2")
+    .from(".hero-social", { y: 15, opacity: 0, duration: 0.4, ease: "power3.out" }, "-=0.2")
+    .from(".hero-photo-shape", { scale: 0.8, opacity: 0, duration: 0.7, ease: "power2.out" }, 0.6)
+    .from(".hero-photo", { y: 40, opacity: 0, duration: 0.7, ease: "power3.out" }, 0.7)
+    .from(".hero-floating-card", { y: 20, opacity: 0, scale: 0.9, duration: 0.5, ease: "back.out(1.5)" }, 1.1);
 }
 
-function setupSectionAnimation(section, scrollContainer, enter, leave) {
-  const type = section.dataset.animation;
-  const persist = section.dataset.persist === "true";
-  const children = section.querySelectorAll(
-    ".section-label, .section-heading, .section-body, .agent-photo-full, .agent-certs, .listings-grid, .testimonials-list, .contact-form, .stat, .stats-grid, .listings-side-text, .contact-socials"
+// ---- Reveal on scroll (IntersectionObserver + class toggle) ----
+function initReveal() {
+  const reveals = document.querySelectorAll(".reveal");
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
   );
 
-  if (!children.length) return;
+  reveals.forEach((el) => observer.observe(el));
+}
 
-  const tl = gsap.timeline({ paused: true });
-
-  switch (type) {
-    case "fade-up":
-      tl.from(children, {
-        y: 40,
-        opacity: 0,
-        stagger: 0.08,
-        duration: 0.5,
-        ease: "power3.out",
-      });
-      break;
-    case "slide-left":
-      tl.from(children, {
-        x: -60,
-        opacity: 0,
-        stagger: 0.08,
-        duration: 0.5,
-        ease: "power3.out",
-      });
-      break;
-    case "slide-right":
-      tl.from(children, {
-        x: 60,
-        opacity: 0,
-        stagger: 0.08,
-        duration: 0.5,
-        ease: "power3.out",
-      });
-      break;
-    case "scale-up":
-      tl.from(children, {
-        scale: 0.9,
-        opacity: 0,
-        stagger: 0.08,
-        duration: 0.6,
-        ease: "power2.out",
-      });
-      break;
-    case "rotate-in":
-      tl.from(children, {
-        y: 30,
-        rotation: 2,
-        opacity: 0,
-        stagger: 0.07,
-        duration: 0.5,
-        ease: "power3.out",
-      });
-      break;
-    case "stagger-up":
-      tl.from(children, {
-        y: 40,
-        opacity: 0,
-        stagger: 0.1,
-        duration: 0.5,
-        ease: "power3.out",
-      });
-      break;
-    case "clip-reveal":
-      tl.from(children, {
-        clipPath: "inset(100% 0 0 0)",
-        opacity: 0,
-        stagger: 0.1,
-        duration: 0.7,
-        ease: "power4.inOut",
-      });
-      break;
-  }
-
-  let hasPlayed = false;
+// ---- Counter animations ----
+function initCounters() {
+  const stats = document.querySelectorAll(".stat");
 
   ScrollTrigger.create({
-    trigger: scrollContainer,
-    start: "top top",
-    end: "bottom bottom",
-    scrub: false,
-    onUpdate: (self) => {
-      const p = self.progress;
-      if (p >= enter && p <= leave) {
-        const localProgress = (p - enter) / (leave - enter);
-        section.style.opacity = 1;
-
-        if (localProgress >= 0.05 && !hasPlayed) {
-          tl.play();
-          hasPlayed = true;
-          // Trigger counters when stats section becomes visible
-          if (section.classList.contains("section-stats")) {
-            animateCounters(section);
-          }
-        }
-
-        if (!persist && localProgress > 0.85 && hasPlayed) {
-          tl.reverse();
-          hasPlayed = false;
-        }
-      } else if (!persist) {
-        if (p < enter) {
-          section.style.opacity = 0;
-          tl.progress(0).pause();
-          hasPlayed = false;
-        }
-        if (p > leave) {
-          section.style.opacity = 0;
-        }
-      }
+    trigger: ".stats-bar",
+    start: "top 80%",
+    once: true,
+    onEnter: () => {
+      stats.forEach((stat) => {
+        const numEl = stat.querySelector(".stat-num");
+        const target = parseInt(stat.dataset.value);
+        const obj = { val: 0 };
+        gsap.to(obj, {
+          val: target,
+          duration: 1.5,
+          ease: "power1.out",
+          onUpdate: () => {
+            numEl.textContent = Math.round(obj.val);
+          },
+        });
+      });
     },
   });
 }
 
-// ---- Counter Animations ----
-function animateCounters(statsSection) {
-  statsSection.querySelectorAll(".stat-number").forEach((el) => {
-    if (el.dataset.animated) return;
-    el.dataset.animated = "true";
+// ---- Marquee ----
+function initMarquee() {
+  const track = document.querySelector(".marquee-track");
+  if (!track) return;
 
-    const target = parseFloat(el.dataset.value);
-    const decimals = parseInt(el.dataset.decimals || "0");
-    const obj = { val: 0 };
-
-    gsap.to(obj, {
-      val: target,
-      duration: 1.5,
-      ease: "power1.out",
-      onUpdate: () => {
-        el.textContent = decimals === 0 ? Math.round(obj.val) : obj.val.toFixed(decimals);
-      },
-    });
+  gsap.to(track, {
+    xPercent: -50,
+    duration: 20,
+    ease: "none",
+    repeat: -1,
   });
 }
 
-// ---- Horizontal Marquee (continuous loop + scroll boost) ----
-function initMarquee() {
-  document.querySelectorAll(".marquee-wrap").forEach((el) => {
-    const textEl = el.querySelector(".marquee-text");
-    if (!textEl) return;
+// ---- Animated house SVG ----
+function initHouseAnimation() {
+  const svg = document.querySelector(".house-svg");
+  if (!svg) return;
 
-    gsap.to(textEl, {
-      xPercent: -50,
-      duration: 12,
-      ease: "none",
-      repeat: -1,
-    });
+  const tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: ".about",
+      start: "top 70%",
+      once: true,
+    },
+  });
 
-    gsap.to(textEl, {
-      x: "-=300",
-      ease: "none",
-      scrollTrigger: {
-        trigger: document.getElementById("scroll-container"),
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true,
-      },
-    });
+  // Draw ground
+  tl.from(".house-ground", { scaleX: 0, transformOrigin: "center", duration: 0.4, ease: "power2.out" })
+    // Build house body from bottom up
+    .from(".house-body", { scaleY: 0, transformOrigin: "bottom", duration: 0.6, ease: "back.out(1.2)" }, 0.2)
+    // Roof drops in
+    .from(".house-roof, .house-roof-fill", { y: -30, opacity: 0, duration: 0.5, ease: "bounce.out" }, 0.6)
+    // Chimney rises
+    .from(".house-chimney", { scaleY: 0, transformOrigin: "bottom", duration: 0.3, ease: "power2.out" }, 0.8)
+    // Door appears
+    .from(".house-door", { scaleY: 0, transformOrigin: "bottom", duration: 0.4, ease: "power3.out" }, 0.9)
+    .from(".house-doorknob", { scale: 0, duration: 0.2, ease: "back.out(3)" }, 1.2)
+    // Windows pop in
+    .from(".house-window", { scale: 0, transformOrigin: "center", duration: 0.3, stagger: 0.1, ease: "back.out(2)" }, 1.0)
+    .from(".house-window-cross", { opacity: 0, duration: 0.2, stagger: 0.05 }, 1.3)
+    // Trees grow
+    .from(".house-tree-trunk", { scaleY: 0, transformOrigin: "bottom", duration: 0.3, stagger: 0.1, ease: "power2.out" }, 1.2)
+    .from(".house-tree-top, .house-tree-top2", { scale: 0, transformOrigin: "center bottom", duration: 0.4, stagger: 0.08, ease: "back.out(1.5)" }, 1.4)
+    // Path fades in
+    .from(".house-path", { opacity: 0, duration: 0.3 }, 1.5)
+    // Heart appears
+    .from(".house-heart", { scale: 0, transformOrigin: "center", duration: 0.4, ease: "back.out(3)" }, 1.7)
+    // Window glow pulse
+    .to(".window-glow", { opacity: 0.08, duration: 0.8, stagger: 0.15, ease: "power1.inOut", yoyo: true, repeat: -1 }, 1.8);
+}
+
+// ---- Georgia parallax ----
+function initParallax() {
+  const bgImg = document.querySelector(".georgia-bg-img");
+  if (!bgImg) return;
+
+  gsap.to(bgImg, {
+    yPercent: 20,
+    ease: "none",
+    scrollTrigger: {
+      trigger: ".georgia-banner",
+      start: "top bottom",
+      end: "bottom top",
+      scrub: true,
+    },
   });
 }
 
@@ -324,20 +194,21 @@ function initContactForm() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const status = document.getElementById("formStatus");
-    const btn = form.querySelector(".cta-button");
-
+    const btn = form.querySelector(".btn");
     btn.textContent = "Enviando...";
     btn.disabled = true;
 
     const data = Object.fromEntries(new FormData(form));
 
     try {
-      const res = await fetch("https://n8n.srv906468.hstgr.cloud/webhook/carol-website-leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
+      const res = await fetch(
+        "https://n8n.srv906468.hstgr.cloud/webhook/carol-website-leads",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
       if (res.ok) {
         status.textContent = "¡Mensaje enviado! Me pondré en contacto pronto.";
         status.style.color = "#7B0A3E";
@@ -346,7 +217,7 @@ function initContactForm() {
         throw new Error("Server error");
       }
     } catch {
-      status.textContent = "Algo salió mal. Llámame directamente al (678) 516-4544.";
+      status.textContent = "Algo salió mal. Llámame al (678) 516-4544.";
       status.style.color = "#e53e3e";
     } finally {
       btn.textContent = "Enviar Mensaje";
@@ -355,11 +226,11 @@ function initContactForm() {
   });
 }
 
-// ---- Smooth scroll anchors ----
-function initSmoothAnchors() {
-  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener("click", (e) => {
-      const target = document.querySelector(anchor.getAttribute("href"));
+// ---- Smooth anchors ----
+function initAnchors() {
+  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener("click", (e) => {
+      const target = document.querySelector(a.getAttribute("href"));
       if (target) {
         e.preventDefault();
         lenis.scrollTo(target, { offset: -80 });
@@ -368,9 +239,9 @@ function initSmoothAnchors() {
   });
 }
 
-// ---- Mobile Hamburger Menu ----
+// ---- Hamburger ----
 function initHamburger() {
-  const btn = document.querySelector(".nav-hamburger");
+  const btn = document.querySelector(".hamburger");
   const links = document.querySelector(".nav-links");
   if (!btn || !links) return;
 
@@ -378,7 +249,6 @@ function initHamburger() {
     btn.classList.toggle("active");
     links.classList.toggle("open");
   });
-
   links.querySelectorAll("a").forEach((a) => {
     a.addEventListener("click", () => {
       btn.classList.remove("active");
@@ -390,11 +260,14 @@ function initHamburger() {
 // ---- Init ----
 document.addEventListener("DOMContentLoaded", () => {
   initLoader();
-  initHeroParallax();
-  initHeaderScroll();
-  setupSections();
+  initHeader();
+  initHero();
+  initReveal();
+  initCounters();
   initMarquee();
+  initHouseAnimation();
+  initParallax();
   initContactForm();
-  initSmoothAnchors();
+  initAnchors();
   initHamburger();
 });
