@@ -68,8 +68,8 @@ function initHero() {
     .from(".hero-subtitle", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, "-=0.3")
     .from(".hero-actions", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, "-=0.2")
     .from(".hero-social", { y: 15, opacity: 0, duration: 0.4, ease: "power3.out" }, "-=0.2")
-    .from(".hero-photo-shape", { x: 40, opacity: 0, duration: 0.7, ease: "power2.out" }, 0.6)
-    .from(".hero-photo-frame", { y: 40, opacity: 0, duration: 0.7, ease: "power3.out" }, 0.7)
+    .from(".hero-photo-shape", { x: 60, opacity: 0, duration: 0.8, ease: "power2.out" }, 0.5)
+    .from(".hero-photo", { y: 50, opacity: 0, duration: 0.8, ease: "power3.out" }, 0.6)
     .from(".hero-floating-card", { y: 20, opacity: 0, scale: 0.9, duration: 0.5, ease: "back.out(1.5)" }, 1.1);
 }
 
